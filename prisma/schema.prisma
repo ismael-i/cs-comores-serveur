@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ──────────────────────────────────────
+// ÉNUMÉRATIONS
+// ──────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CHERCHEUR
+}
+
+enum AccountStatus {
+  PENDING
+  VALIDATED
+  ACTIVE
+  REJECTED
+}
+
+enum LabCategory {
+  Sciences
+  Environnement
+  Santé
+  Économie
+  Lettres
+}
+
+enum PublicationDomain {
+  Environnement
+  Sciences
+  Santé
+  Économie
+  Lettres
+}
+
+enum PublicationType {
+  Article_Scientifique
+  Communication_De_Conference
+}
+
+// ──────────────────────────────────────
+// AUTHENTIFICATION
+// ──────────────────────────────────────
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  password        String
+  name            String
+  role            Role          @default(CHERCHEUR)
+  status          AccountStatus @default(PENDING)
+
+  chercheurId     String?       @unique
+  chercheur       Chercheur?    @relation(fields: [chercheurId], references: [id])
+
+  validationToken       String?  @unique
+  validationTokenExpiry DateTime?
+  adminRejectionReason  String?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  adminActions    AdminAction[]  @relation("AdminActor")
+  actionsOnMe     AdminAction[]  @relation("TargetUser")
+  institution   String 
+
+  @@map("users")
+}
+
+model AdminAction {
+  id        String   @id @default(uuid())
+  action    String
+  reason    String?
+
+  adminId   String
+  admin     User     @relation("AdminActor", fields: [adminId], references: [id])
+
+  userId    String
+  user      User     @relation("TargetUser", fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("admin_actions")
+}
+
+// ──────────────────────────────────────
+// INSTITUTIONS
+// ──────────────────────────────────────
+
+model Institution {
+  id          String    @id @default(uuid())
+  acronym     String    @unique
+  name        String
+  description String
+  logo        String?
+  logoBg      String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  chercheurs    Chercheur[]
+  laboratoires  Laboratoire[]
+
+  @@map("institutions")
+}
+
+// ──────────────────────────────────────
+// CHERCHEURS
+// ──────────────────────────────────────
+
+model Chercheur {
+  id            String    @id @default(uuid())
+  name          String
+  photoUrl      String?
+  
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionName String
+  faculty       String?
+
+  laboratoireId String?
+  laboratoire   Laboratoire? @relation("ChercheursLabo", fields: [laboratoireId], references: [id])
+  laboratoireName String?
+  effectif      Int?
+
+  specialty     String
+  publications  String?
+  partenariats  String?
+
+  email         String?     @unique
+  phone         String?
+
+  note          String?
+  fiche         String?
+
+  user          User?
+
+  laboratoiresDiriges Laboratoire[] @relation("ResponsableLabo")
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("chercheurs")
+}
+
+// ──────────────────────────────────────
+// LABORATOIRES
+// ──────────────────────────────────────
+
+model Laboratoire {
+  id            String      @id @default(uuid())
+  acronym       String      @unique
+  name          String
+  description   String
+  categorie     LabCategory
+  researchers   Int         @default(0)
+  
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  institutionName String
+
+  thematiques   Json     @default("[]")
+
+  responsableId String?     @unique
+  responsable   Chercheur?  @relation("ResponsableLabo", fields: [responsableId], references: [id])
+
+  partenariats  Json     @default("[]")
+
+  logo          String?
+
+  contactEmail     String?
+  contactTelephone String?
+  contactSite      String?
+
+  statut        String      @default("Actif")
+
+  chercheurs    Chercheur[] @relation("ChercheursLabo")
+  publications  Publication[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("laboratoires")
+}
+
+// ──────────────────────────────────────
+// PUBLICATIONS
+// ──────────────────────────────────────
+
+model Publication {
+  id            String            @id @default(uuid())
+  title         String
+  domain        PublicationDomain
+  year          Int
+  type          PublicationType
+  journal       String
+  description   String
+  pdfUrl        String?
+
+  laboratoireId String
+  laboratoire   Laboratoire       @relation(fields: [laboratoireId], references: [id])
+
+  institutionAcronym String?
+
+  authors       PublicationAuthor[]
+  keywords      PublicationKeyword[]
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@map("publications")
+}
+
+model PublicationAuthor {
+  id            String      @id @default(uuid())
+  name          String
+  institution   String?
+  faculty       String?
+
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@map("publication_authors")
+}
+
+model PublicationKeyword {
+  id            String      @id @default(uuid())
+  keyword       String
+
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+
+  @@index([keyword])
+
+  @@map("publication_keywords")
+}
+
+// ──────────────────────────────────────
+// ARTICLES (Fil Info)
+// ──────────────────────────────────────
+
+model Article {
+  id            String    @id @default(uuid())
+  date          DateTime
+  title         String
+  description   String
+  imageUrl      String?
+  imageAlt      String?
+  body          Json     @default("[]") 
+  
+  authorName        String
+  authorPhotoUrl    String?
+
+  laboratoryAcronym String?
+  laboratoryName    String?
+
+  tags          ArticleTag[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("articles")
+}
+
+model ArticleTag {
+  id        String  @id @default(uuid())
+  tag       String
+
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([tag])
+
+  @@map("article_tags")
+}
