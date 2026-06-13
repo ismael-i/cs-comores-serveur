@@ -8,16 +8,16 @@ async function main() {
   console.log("🌱 Début du seed...\n")
 
   // ─── Nettoyage (optionnel, commenter en production) ───
-//   await prisma.articleTag.deleteMany()
-//   await prisma.article.deleteMany()
-//   await prisma.publicationKeyword.deleteMany()
-//   await prisma.publicationAuthor.deleteMany()
-//   await prisma.publication.deleteMany()
-//   await prisma.adminAction.deleteMany()
-//   await prisma.user.deleteMany()
-//   await prisma.chercheur.deleteMany()
-//   await prisma.laboratoire.deleteMany()
-//   await prisma.institution.deleteMany()
+  await prisma.articleTag.deleteMany()
+  await prisma.article.deleteMany()
+  await prisma.publicationKeyword.deleteMany()
+  await prisma.publicationAuthor.deleteMany()
+  await prisma.publication.deleteMany()
+  await prisma.adminAction.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.chercheur.deleteMany()
+  await prisma.laboratoire.deleteMany()
+  await prisma.institution.deleteMany()
 
   console.log("🧹 Base nettoyée\n")
 
@@ -25,7 +25,7 @@ async function main() {
   const adminPassword = await bcrypt.hash("Admin123!", 12)
   const admin = await prisma.user.create({
     data: {
-      email: "admin@catalogue-comores.km",
+      email: "ismaelrazafindramboly@gmail.com",
       password: adminPassword,
       name: "Administrateur",
       role: "ADMIN",

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; background: #f8fafc; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #059669; color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header .icon { font-size: 40px; margin-bottom: 10px; }
+    .header h1 { font-size: 22px; font-weight: 700; }
+    .content { background: white; padding: 30px; border: 1px solid #e2e8f0; border-top: none; }
+    .button { 
+      display: inline-block; 
+      background: #059669; 
+      color: white !important; 
+      padding: 16px 36px; 
+      text-decoration: none; 
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 0;
+    }
+    .warning { 
+      background: #fef3c7; 
+      padding: 15px; 
+      border-radius: 8px; 
+      margin: 20px 0; 
+      border-left: 4px solid #d97706;
+      font-size: 14px;
+    }
+    .warning strong { color: #92400e; }
+    .features { margin: 25px 0; }
+    .features h3 { color: #059669; margin-bottom: 10px; }
+    .features ul { list-style: none; padding: 0; }
+    .features li { padding: 8px 0; font-size: 14px; }
+    .features li::before { content: "✅ "; }
+    .footer { text-align: center; padding: 20px; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">✅</div>
+      <h1>Inscription validée !</h1>
+      <p>Catalogue Scientifique des Comores</p>
+    </div>
+    <div class="content">
+      <p>Bonjour <strong>{{chercheurName}}</strong>,</p>
+      
+      <p>Excellente nouvelle ! Votre inscription au <strong>Catalogue Scientifique des Comores</strong> a été validée par l'administration.</p>
+      
+      <p>Pour finaliser votre inscription et accéder à votre espace, veuillez cliquer sur le bouton ci-dessous :</p>
+      
+      <a href="{{activationUrl}}" class="button">
+        🚀 Activer mon compte
+      </a>
+      
+      <div class="warning">
+        <strong>⚠️ Important :</strong> Ce lien est valable pendant <strong>48 heures</strong>. Passé ce délai, vous devrez contacter l'administration pour obtenir un nouveau lien.
+      </div>
+
+      <div class="features">
+        <h3>Après activation, vous pourrez :</h3>
+        <ul>
+          <li>Compléter votre profil chercheur</li>
+          <li>Ajouter vos publications scientifiques</li>
+          <li>Gérer votre photo de profil</li>
+          <li>Consulter les autres chercheurs et laboratoires</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b;">
+        Si vous n'avez pas demandé cette inscription, veuillez ignorer cet email.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Catalogue Scientifique des Comores</p>
+      <p>Système automatisé — Ne pas répondre à cet email</p>
+    </div>
+  </div>
+</body>
+</html>

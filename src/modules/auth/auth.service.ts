@@ -49,6 +49,7 @@ export class AuthService {
         name: user.name,
         role: user.role,
         status: user.status,
+        institution: user.institution,
         chercheurId: user.chercheurId
       }
     }
@@ -63,18 +64,15 @@ export class AuthService {
       throw new AppError(400, "Cet email est déjà utilisé")
     }
 
-    if (data.chercheurId) {
-      const chercheur = await prisma.chercheur.findUnique({
-        where: { id: data.chercheurId }
-      })
+    // if (data.chercheurId) {
+    //   const chercheur = await prisma.chercheur.findUnique({
+    //     where: { id: data.chercheurId }
+    //   })
       
-      if (!chercheur) {
-        throw new AppError(404, "Chercheur non trouvé")
-      }
-      if (chercheur.userId) {
-        throw new AppError(400, "Ce chercheur a déjà un compte")
-      }
-    }
+    //   if (!chercheur) {
+    //     throw new AppError(404, "Chercheur non trouvé")
+    //   }
+    // }
 
     const hashedPassword = await bcrypt.hash(data.password, 12)
 
@@ -85,7 +83,7 @@ export class AuthService {
         name: data.name,
         role: "CHERCHEUR",
         status: "PENDING",
-        chercheurId: data.chercheurId
+        institution: data.institution,
       }
     })
 
@@ -113,44 +111,53 @@ export class AuthService {
     }
   }
 
-  async validateRegistration(userId: string, adminId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } })
-    
-    if (!user) throw new AppError(404, "Utilisateur non trouvé")
-    if (user.status !== "PENDING") {
-      throw new AppError(400, `Cette demande est déjà ${user.status}`)
+
+  //validation et rejet des demandes d'inscription par les admins, activation du compte par le chercheur, récupération des demandes en attente et du profil de l'utilisateur
+    async validateRegistration(userId: string, adminId: string, chercheurId: string) {
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+
+      if (!user) throw new AppError(404, "Utilisateur non trouvé")
+      if (user.status !== "PENDING") {
+        throw new AppError(400, `Cette demande est déjà ${user.status}`)
+      }
+
+      // Vérifier que le chercheur existe et n'est pas déjà lié
+      const chercheur = await prisma.chercheur.findUnique({
+        where: { id: chercheurId },
+         include: { user: true }   // ← nécessaire
+      })
+
+      if (!chercheur) throw new AppError(404, "Chercheur non trouvé")
+     if (chercheur.user !== null) throw new AppError(400, "Ce chercheur a déjà un compte lié")
+
+      const validationToken = crypto.randomBytes(32).toString("hex")
+      const validationTokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000)
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          status: "VALIDATED",
+          validationToken,
+          validationTokenExpiry,
+          chercheurId,          // ✅ Assigné ici par l'admin
+        }
+      })
+
+      await prisma.adminAction.create({
+        data: { action: "VALIDATED", adminId, userId }
+      })
+
+      const activationUrl = `${env.FRONTEND_URL}/auth/activate?token=${validationToken}`
+
+      await sendEmail({
+        to: user.email,
+        subject: "✅ Votre inscription a été validée",
+        template: "chercheur-validation",
+        context: { chercheurName: user.name, activationUrl }
+      })
+
+      return { message: "Compte validé. Email d'activation envoyé au chercheur." }
     }
-
-    const validationToken = crypto.randomBytes(32).toString("hex")
-    const validationTokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000)
-
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        status: "VALIDATED",
-        validationToken,
-        validationTokenExpiry
-      }
-    })
-
-    await prisma.adminAction.create({
-      data: { action: "VALIDATED", adminId, userId }
-    })
-
-    const activationUrl = `${env.FRONTEND_URL}/auth/activate?token=${validationToken}`
-
-    await sendEmail({
-      to: user.email,
-      subject: "✅ Votre inscription a été validée",
-      template: "chercheur-validation",
-      context: {
-        chercheurName: user.name,
-        activationUrl
-      }
-    })
-
-    return { message: "Compte validé. Email d'activation envoyé au chercheur." }
-  }
 
   async rejectRegistration(userId: string, adminId: string, reason: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } })

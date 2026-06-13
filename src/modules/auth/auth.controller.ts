@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express"
 import { AuthService } from "./auth.service"
-import { loginSchema, registerSchema } from "./auth.schema"
+import { loginSchema, registerSchema, ValidateRegistrationSchema } from "./auth.schema"
 
 const authService = new AuthService()
 
@@ -47,17 +47,21 @@ export class AuthController {
     return res.json({ message: "Déconnecté" })
   }
 
-  async validateRegistration(req: Request, res: Response, next: NextFunction) {
-    try {
-      const result = await authService.validateRegistration(
-        req.params.userId,
-        req.user!.userId
-      )
-      return res.json(result)
-    } catch (error) {
-      next(error)
-    }
+async validateRegistration(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { chercheurId } = ValidateRegistrationSchema.parse(req.body)
+    const userId = req.params.userId as string
+
+    const result = await authService.validateRegistration(
+      userId,
+      req.user!.userId,
+      chercheurId
+    )
+    return res.json(result)
+  } catch (error) {
+    next(error)
   }
+}
 
   async rejectRegistration(req: Request, res: Response, next: NextFunction) {
     try {
@@ -66,7 +70,7 @@ export class AuthController {
         return res.status(400).json({ error: "Le motif de rejet est obligatoire" })
       }
       const result = await authService.rejectRegistration(
-        req.params.userId,
+        req.params.userId as string,
         req.user!.userId,
         reason
       )

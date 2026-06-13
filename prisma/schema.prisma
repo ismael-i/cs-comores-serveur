@@ -68,7 +68,7 @@ model User {
 
   adminActions    AdminAction[]  @relation("AdminActor")
   actionsOnMe     AdminAction[]  @relation("TargetUser")
-  institution   String 
+  institution   String? 
 
   @@map("users")
 }
