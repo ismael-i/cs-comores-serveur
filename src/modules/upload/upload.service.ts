@@ -1,46 +1,47 @@
-import sharp from "sharp"
 import path from "path"
 import fs from "fs/promises"
 import { AppError } from "../../shared/errors/AppError"
 import { env } from "../../config/env"
 
 export class UploadService {
-  async processImage(filePath: string, options?: {
-    width?: number
-    height?: number
-    quality?: number
-  }) {
-    const { width = 800, height = 800, quality = 80 } = options || {}
+  
+  /**
+   * Sauvegarde un fichier et retourne juste le nom du fichier
+   */
+  async saveFile(file: Express.Multer.File, type: string): Promise<string> {
+    // Le fichier est déjà sauvegardé par multer
+    // On retourne juste le chemin relatif pour le stocker en DB
     
-    const outputPath = filePath.replace(path.extname(filePath), "_processed.webp")
+    // Construire le chemin relatif : uploads/chercheurs/uuid.jpg
+    const relativePath = `uploads/${type}/${file.filename}`
     
-    try {
-      await sharp(filePath)
-        .resize(width, height, { fit: "cover", position: "center" })
-        .webp({ quality })
-        .toFile(outputPath)
-
-      // Supprimer l'original
-      await fs.unlink(filePath)
-      // Renommer le fichier traité
-      const finalPath = filePath.replace(path.extname(filePath), ".webp")
-      await fs.rename(outputPath, finalPath)
-      
-      return finalPath
-    } catch (error) {
-      throw new AppError(500, "Erreur lors du traitement de l'image")
-    }
+    return relativePath
   }
 
-  getImageUrl(relativePath: string): string {
-    return `${env.API_URL}/${relativePath.replace(/\\/g, "/")}`
+  /**
+   * Retourne l'URL complète pour accéder au fichier
+   */
+  getFileUrl(relativePath: string): string {
+    if (!relativePath) return ""
+    return `${env.API_URL}/${relativePath}`
   }
 
-  async deleteImage(filePath: string) {
+  /**
+   * Supprime un fichier
+   */
+  async deleteFile(relativePath: string) {
+    if (!relativePath) return
+    
+    const absolutePath = path.join(process.cwd(), relativePath)
+    
     try {
-      await fs.unlink(filePath)
-    } catch {
+      await fs.unlink(absolutePath)
+      console.log(`🗑️ Fichier supprimé: ${relativePath}`)
+    } catch (error: any) {
       // Ignorer si le fichier n'existe pas
+      if (error.code !== "ENOENT") {
+        console.error(`Erreur suppression fichier ${relativePath}:`, error)
+      }
     }
   }
 }

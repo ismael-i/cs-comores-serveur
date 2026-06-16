@@ -88,22 +88,22 @@ export class AuthService {
     })
 
     // Notifier les admins
-    // const admins = await prisma.user.findMany({
-    //   where: { role: "ADMIN", status: "ACTIVE" }
-    // })
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN", status: "ACTIVE" }
+    })
 
-    // for (const admin of admins) {
-    //   await sendEmail({
-    //     to: admin.email,
-    //     subject: "🔔 Nouvelle demande d'inscription chercheur",
-    //     template: "admin-notification",
-    //     context: {
-    //       chercheurName: data.name,
-    //       chercheurEmail: data.email,
-    //       adminUrl: env.FRONTEND_URL
-    //     }
-    //   })
-    // }
+    for (const admin of admins) {
+      await sendEmail({
+        to: admin.email,
+        subject: "🔔 Nouvelle demande d'inscription chercheur",
+        template: "admin-notification",
+        context: {
+          chercheurName: data.name,
+          chercheurEmail: data.email,
+          adminUrl: env.FRONTEND_URL
+        }
+      })
+    }
 
     return {
       message: "Demande envoyée. Vous recevrez un email après validation.",
@@ -254,4 +254,94 @@ export class AuthService {
     const { password, ...profile } = user
     return profile
   }
+  // Dans AuthService class
+
+/**
+ * Recherche des chercheurs pour l'assignation lors de la validation
+ */
+async searchChercheursForAssignment(query: string) {
+  if (!query || query.length < 2) {
+    return []
+  }
+
+  const chercheurs = await prisma.chercheur.findMany({
+    where: {
+      OR: [
+        { name: { contains: query } },
+        { email: { contains: query} },
+        { specialty: { contains: query } }
+      ]
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      specialty: true,
+      photoUrl: true,
+      institution: { select: { acronym: true, name: true } },
+      laboratoire: { select: { acronym: true, name: true } },
+      user: { select: { id: true } } // Pour savoir si déjà lié
+    },
+    take: 10,
+    orderBy: { name: "asc" }
+  })
+
+  return chercheurs.map(c => ({
+    ...c,
+    hasAccount: c.user !== null
+  }))
 }
+
+/**
+ * Créer un nouveau chercheur et l'assigner à l'utilisateur
+ */
+async createChercheurAndAssign(data: {
+  name: string
+  email?: string
+  specialty: string
+  institutionId: string
+  faculty?: string
+  laboratoireId?: string
+  phone?: string
+}) {
+  // Vérifier l'institution
+  const institution = await prisma.institution.findUnique({
+    where: { id: data.institutionId }
+  })
+  if (!institution) throw new AppError(404, "Institution non trouvée")
+
+  // Vérifier le laboratoire si fourni
+  if (data.laboratoireId) {
+    const labo = await prisma.laboratoire.findUnique({
+      where: { id: data.laboratoireId }
+    })
+    if (!labo) throw new AppError(404, "Laboratoire non trouvé")
+  }
+
+  const chercheur = await prisma.chercheur.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      specialty: data.specialty,
+      faculty: data.faculty,
+      phone: data.phone,
+      institutionId: data.institutionId,
+      institutionName: institution.name,
+      laboratoireId: data.laboratoireId,
+      laboratoireName: data.laboratoireId 
+        ? (await prisma.laboratoire.findUnique({ where: { id: data.laboratoireId } }))?.name 
+        : null
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      specialty: true,
+      institution: { select: { acronym: true, name: true } }
+    }
+  })
+
+  return chercheur
+}
+}
+

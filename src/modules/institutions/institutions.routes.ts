@@ -1,21 +1,20 @@
 import { Router } from "express"
-import { LaboratoiresController } from "./laboratoires.controller"
+import { InstitutionsController } from "./institutions.controller"
 import { authenticate } from "../../middleware/auth"
 import { authorize } from "../../middleware/roles"
 
 const router : Router = Router()
-const controller = new LaboratoiresController()
+const controller = new InstitutionsController()
 
 // Routes publiques
 router.get("/", controller.findAll)
 router.get("/acronym/:acronym", controller.findByAcronym)
 router.get("/:id", controller.findById)
-router.get("/:id/chercheurs", controller.getChercheurs)
-router.get("/:id/publications", controller.getPublications)
+router.get("/:id/stats", controller.getStats)
 
 // Routes admin
 router.post("/", authenticate, authorize("ADMIN"), controller.create)
 router.put("/:id", authenticate, authorize("ADMIN"), controller.update)
 router.delete("/:id", authenticate, authorize("ADMIN"), controller.delete)
 
-export { router as laboratoiresRoutes }
+export { router as institutionsRoutes }

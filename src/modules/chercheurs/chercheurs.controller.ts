@@ -23,7 +23,7 @@ export class ChercheursController {
 
   async findById(req: Request, res: Response, next: NextFunction) {
     try {
-      const chercheur = await chercheursService.findById(req.params.id)
+      const chercheur = await chercheursService.findById(req.params.id as string)
       return res.json(chercheur)
     } catch (error) {
       next(error)
@@ -43,7 +43,7 @@ export class ChercheursController {
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const data = updateChercheurSchema.parse(req.body)
-      const chercheur = await chercheursService.update(req.params.id, data)
+      const chercheur = await chercheursService.update(req.params.id as string, data)
       return res.json(chercheur)
     } catch (error) {
       next(error)
@@ -52,7 +52,7 @@ export class ChercheursController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      await chercheursService.delete(req.params.id)
+      await chercheursService.delete(req.params.id as string)
       return res.json({ message: "Chercheur supprimé" })
     } catch (error) {
       next(error)

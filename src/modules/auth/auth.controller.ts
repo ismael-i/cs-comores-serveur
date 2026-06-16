@@ -50,6 +50,10 @@ export class AuthController {
 async validateRegistration(req: Request, res: Response, next: NextFunction) {
   try {
     const { chercheurId } = ValidateRegistrationSchema.parse(req.body)
+     if (!chercheurId) {
+      return res.status(400).json({ error: "chercheurId est requis pour la validation" })
+    }
+
     const userId = req.params.userId as string
 
     const result = await authService.validateRegistration(
@@ -101,4 +105,27 @@ async validateRegistration(req: Request, res: Response, next: NextFunction) {
       next(error)
     }
   }
+  // Dans AuthController class
+
+async searchChercheurs(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { q } = req.query
+    if (!q || typeof q !== "string" || q.length < 2) {
+      return res.json([])
+    }
+    const chercheurs = await authService.searchChercheursForAssignment(q)
+    return res.json(chercheurs)
+  } catch (error) {
+    next(error)
+  }
+}
+
+async createChercheurAndAssign(req: Request, res: Response, next: NextFunction) {
+  try {
+    const chercheur = await authService.createChercheurAndAssign(req.body)
+    return res.status(201).json(chercheur)
+  } catch (error) {
+    next(error)
+  }
+}
 }

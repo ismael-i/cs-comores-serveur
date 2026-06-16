@@ -1,8 +1,6 @@
 // import { PrismaClient, LabCategory, PublicationDomain, PublicationType } from "@prisma/client"
 import bcrypt from "bcryptjs"
-import prisma  from "../src/config/database"
-
-
+import prisma from "../src/config/database"
 
 async function main() {
   console.log("🌱 Début du seed...\n")
@@ -39,7 +37,8 @@ async function main() {
     data: {
       acronym: "UDC",
       name: "Université des Comores",
-      description: "Université publique des Comores, principale institution d'enseignement supérieur du pays.",
+      description:
+        "Université publique des Comores, principale institution d'enseignement supérieur du pays.",
       logoBg: "bg-blue-100"
     }
   })
@@ -48,7 +47,8 @@ async function main() {
     data: {
       acronym: "CNDRS",
       name: "Centre National de Documentation et de Recherche Scientifique",
-      description: "Centre de recherche national comorien dédié à la documentation et à la recherche scientifique.",
+      description:
+        "Centre de recherche national comorien dédié à la documentation et à la recherche scientifique.",
       logoBg: "bg-green-100"
     }
   })
@@ -57,7 +57,8 @@ async function main() {
     data: {
       acronym: "INRAPE",
       name: "Institut National de Recherche pour l'Agriculture, la Pêche et l'Environnement",
-      description: "Institut de recherche appliquée dans les domaines de l'agriculture, la pêche et l'environnement.",
+      description:
+        "Institut de recherche appliquée dans les domaines de l'agriculture, la pêche et l'environnement.",
       logoBg: "bg-emerald-100"
     }
   })
@@ -68,7 +69,8 @@ async function main() {
     data: {
       acronym: "LSML",
       name: "Laboratoire des Sciences Mathématiques et leurs Applications",
-      description: "Laboratoire dédié aux mathématiques fondamentales et appliquées, statistiques et modélisation.",
+      description:
+        "Laboratoire dédié aux mathématiques fondamentales et appliquées, statistiques et modélisation.",
       categorie: "Sciences",
       researchers: 8,
       institutionId: udc.id,
@@ -84,8 +86,9 @@ async function main() {
     data: {
       acronym: "BioSan",
       name: "Laboratoire Biodiversité et Santé",
-      description: "Étude de la biodiversité comorienne et son lien avec la santé publique.",
-      categorie: "Santé" ,
+      description:
+        "Étude de la biodiversité comorienne et son lien avec la santé publique.",
+      categorie: "Santé",
       researchers: 6,
       institutionId: udc.id,
       institutionName: "UDC",
@@ -99,7 +102,8 @@ async function main() {
     data: {
       acronym: "LEMA",
       name: "Laboratoire d'Économie et Management Appliqué",
-      description: "Recherches en économie du développement, management et entrepreneuriat.",
+      description:
+        "Recherches en économie du développement, management et entrepreneuriat.",
       categorie: "Économie",
       researchers: 5,
       institutionId: udc.id,
@@ -168,21 +172,38 @@ async function main() {
   })
   console.log("✅ 3 chercheurs créés avec responsables assignés")
 
-  // ─── PUBLICATIONS ─────────────────────
+  // ─── CRÉER UN COMPTE CHERCHEUR LIÉ ────
+  // (optionnel, pour tester la connexion d'un chercheur)
+  const chercheurUser = await prisma.user.create({
+    data: {
+      email: "chercheur@gmail.com",
+      password: adminPassword,
+      name: "Dr Nadjim Ahmed Mohamed",
+      role: "CHERCHEUR",
+      status: "ACTIVE",
+      chercheurId: nadjim.id   // liaison
+    }
+  })
+  console.log("✅ Compte chercheur créé:", chercheurUser.email)
+
+  // ─── PUBLICATIONS (avec auteurs liés aux chercheurs) ──
   await prisma.publication.create({
     data: {
-      title: "Impact du changement climatique sur la biodiversité marine des Comores",
+      title:
+        "Impact du changement climatique sur la biodiversité marine des Comores",
       domain: "Environnement",
       year: 2024,
       type: "Article_Scientifique",
       journal: "Journal of Marine Science",
-      description: "Étude sur l'impact du réchauffement des océans sur les récifs coralliens comoriens.",
+      description:
+        "Étude sur l'impact du réchauffement des océans sur les récifs coralliens comoriens.",
       laboratoireId: biosan.id,
       institutionAcronym: "UDC",
       authors: {
         create: [
-          { name: "Dr Said Hassani Mohamed", institution: "UDC", faculty: "FST" },
-          { name: "Dr Fatima Abdallah", institution: "UDC", faculty: "FST" }
+          { chercheurId: said.id, order: 0 },
+          // On peut ajouter d'autres chercheurs existants ; ici on simule un deuxième auteur fictif, mais comme on n'a que trois chercheurs, prenons le chercheur nadjim pour l'exemple
+          { chercheurId: nadjim.id, order: 1 }
         ]
       },
       keywords: {
@@ -197,17 +218,19 @@ async function main() {
 
   await prisma.publication.create({
     data: {
-      title: "Modélisation mathématique des systèmes dynamiques appliquée à l'économie comorienne",
+      title:
+        "Modélisation mathématique des systèmes dynamiques appliquée à l'économie comorienne",
       domain: "Sciences",
       year: 2024,
       type: "Article_Scientifique",
       journal: "Applied Mathematics Journal",
-      description: "Application des modèles mathématiques pour analyser la croissance économique.",
+      description:
+        "Application des modèles mathématiques pour analyser la croissance économique.",
       laboratoireId: lsml.id,
       institutionAcronym: "UDC",
       authors: {
         create: [
-          { name: "Dr Nadjim Ahmed Mohamed", institution: "UDC", faculty: "FST" }
+          { chercheurId: nadjim.id, order: 0 }
         ]
       },
       keywords: {
@@ -221,20 +244,20 @@ async function main() {
   })
   console.log("✅ 2 publications créées")
 
-  // ─── ARTICLES ─────────────────────────
+  // ─── ARTICLES (avec auteur chercheur et laboratoire) ──
   await prisma.article.create({
     data: {
       date: new Date("2025-03-15"),
       title: "Nouvelle publication sur la biodiversité marine",
-      description: "Une étude majeure sur l'impact du changement climatique sur les récifs coralliens comoriens.",
+      description:
+        "Une étude majeure sur l'impact du changement climatique sur les récifs coralliens comoriens.",
       body: [
         "Une équipe de chercheurs du laboratoire BioSan a publié une étude révolutionnaire sur l'impact du changement climatique.",
         "Cette recherche met en lumière l'importance de la préservation des écosystèmes marins dans l'archipel des Comores.",
         "Les résultats seront présentés lors de la prochaine conférence internationale sur la biodiversité."
       ],
-      authorName: "Dr Said Hassani Mohamed",
-      laboratoryAcronym: "BioSan",
-      laboratoryName: "Laboratoire Biodiversité et Santé",
+      chercheurId: said.id,            // auteur
+      laboratoireId: biosan.id,        // laboratoire
       tags: {
         create: [
           { tag: "biodiversité" },
@@ -249,14 +272,14 @@ async function main() {
     data: {
       date: new Date("2025-02-28"),
       title: "Conférence sur l'entrepreneuriat aux Comores",
-      description: "Le LEMA organise une conférence sur les défis de l'entrepreneuriat dans l'archipel.",
+      description:
+        "Le LEMA organise une conférence sur les défis de l'entrepreneuriat dans l'archipel.",
       body: [
         "Le Laboratoire d'Économie et Management Appliqué a organisé une conférence sur l'entrepreneuriat.",
         "Plusieurs intervenants ont partagé leurs expériences sur l'entrepreneuriat local et les défis spécifiques aux Comores."
       ],
-      authorName: "Dr Malik El-Houyoun Ahamada",
-      laboratoryAcronym: "LEMA",
-      laboratoryName: "Laboratoire d'Économie et Management Appliqué",
+      chercheurId: malik.id,           // auteur
+      laboratoireId: lema.id,          // laboratoire
       tags: {
         create: [
           { tag: "entrepreneuriat" },
@@ -272,9 +295,10 @@ async function main() {
   console.log("   Seed terminé avec succès !")
   console.log("──────────────────────────────────")
   console.log("\n📧 Comptes de test :")
-  console.log("   Admin  : admin@catalogue-comores.km / Admin123!")
-  console.log("   Chercheur (à inscrire) : ahmed.nadjim@fst-udc.org")
-  console.log("   Chercheur (à inscrire) : mohamed.saidhassani@univ-comores.com\n")
+  console.log("   Admin  : ismaelrazafindramboly@gmail.com / Admin123!")
+  console.log("   Chercheur (lié) : chercheur@gmail.com / Admin123!")
+  console.log("   Chercheur 1 : ahmed.nadjim@fst-udc.org")
+  console.log("   Chercheur 2 : mohamed.saidhassani@univ-comores.com\n")
 }
 
 main()

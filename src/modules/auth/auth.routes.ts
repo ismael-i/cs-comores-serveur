@@ -35,4 +35,18 @@ router.post(
   controller.rejectRegistration
 )
 
+// Routes admin supplémentaires pour la recherche et création de chercheurs
+router.get(
+  "/admin/search-chercheurs",
+  authenticate,
+  authorize("ADMIN"),
+  controller.searchChercheurs
+)
+
+router.post(
+  "/admin/create-chercheur",
+  authenticate,
+  authorize("ADMIN"),
+  controller.createChercheurAndAssign
+)
 export { router as authRoutes }

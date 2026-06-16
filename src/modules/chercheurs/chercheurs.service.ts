@@ -13,12 +13,13 @@ export class ChercheursService {
     const where: Prisma.ChercheurWhereInput = {}
 
     if (query.search) {
-      where.OR = [
-        { name: { contains: query.search, mode: "insensitive" } },
-        { specialty: { contains: query.search, mode: "insensitive" } },
-        { institutionName: { contains: query.search, mode: "insensitive" } }
-      ]
-    }
+    where.OR = [
+      { name: { contains: query.search } },
+      { specialty: { contains: query.search } },
+      { institutionName: { contains: query.search } },
+      {laboratoireName: { contains: query.search } }
+    ]
+  }
 
     if (query.institution) {
       where.institutionId = query.institution
@@ -32,8 +33,8 @@ export class ChercheursService {
       prisma.chercheur.findMany({
         where,
         include: {
-          institution: { select: { acronym: true, name: true } },
-          laboratoire: { select: { acronym: true, name: true } }
+          institution: { select: {id: true , acronym: true, name: true } },
+          laboratoire: { select: {id: true,  acronym: true, name: true } }
         },
         skip: (query.page - 1) * query.limit,
         take: query.limit,

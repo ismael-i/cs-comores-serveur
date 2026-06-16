@@ -140,6 +140,9 @@ model Chercheur {
   fiche         String?
 
   user          User?
+  
+  publicationAuthors PublicationAuthor[]   // auteurs de publications
+  articles           Article[]              // articles écrits
 
   laboratoiresDiriges Laboratoire[] @relation("ResponsableLabo")
 
@@ -182,6 +185,7 @@ model Laboratoire {
 
   chercheurs    Chercheur[] @relation("ChercheursLabo")
   publications  Publication[]
+  articles Article[]
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -208,7 +212,7 @@ model Publication {
 
   institutionAcronym String?
 
-  authors       PublicationAuthor[]
+  authors       PublicationAuthor[]   // auteurs liés à des Chercheurs
   keywords      PublicationKeyword[]
 
   createdAt     DateTime          @default(now())
@@ -217,15 +221,20 @@ model Publication {
   @@map("publications")
 }
 
+// Table de jointure Publication <-> Chercheur
 model PublicationAuthor {
   id            String      @id @default(uuid())
-  name          String
-  institution   String?
-  faculty       String?
 
   publicationId String
   publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
 
+  chercheurId   String
+  chercheur     Chercheur   @relation(fields: [chercheurId], references: [id], onDelete: Cascade)
+
+  // Optionnel : ordre d'apparition
+  order         Int         @default(0)
+
+  @@unique([publicationId, chercheurId])
   @@map("publication_authors")
 }
 
@@ -237,7 +246,6 @@ model PublicationKeyword {
   publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
 
   @@index([keyword])
-
   @@map("publication_keywords")
 }
 
@@ -252,13 +260,15 @@ model Article {
   description   String
   imageUrl      String?
   imageAlt      String?
-  body          Json     @default("[]") 
-  
-  authorName        String
-  authorPhotoUrl    String?
+  body          Json      @default("[]")
 
-  laboratoryAcronym String?
-  laboratoryName    String?
+  // Auteur (chercheur)
+  chercheurId   String?
+  chercheur     Chercheur?  @relation(fields: [chercheurId], references: [id])
+
+  // Laboratoire
+  laboratoireId String?
+  laboratoire   Laboratoire? @relation(fields: [laboratoireId], references: [id])
 
   tags          ArticleTag[]
 
@@ -276,6 +286,5 @@ model ArticleTag {
   article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
   @@index([tag])
-
   @@map("article_tags")
 }
