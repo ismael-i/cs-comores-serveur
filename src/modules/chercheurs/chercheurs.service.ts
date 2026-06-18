@@ -9,6 +9,7 @@ export class ChercheursService {
     laboratoire?: string
     page: number
     limit: number
+    excludeId?: string[]
   }) {
     const where: Prisma.ChercheurWhereInput = {}
 
@@ -27,6 +28,10 @@ export class ChercheursService {
 
     if (query.laboratoire) {
       where.laboratoireId = query.laboratoire
+    }
+
+    if (query.excludeId && query.excludeId.length > 0) {
+      where.id = { notIn: query.excludeId }
     }
 
     const [chercheurs, total] = await Promise.all([
@@ -68,7 +73,16 @@ export class ChercheursService {
               }
             }
           }
-        }
+        },
+        publicationAuthors: {
+          include: {
+            publication: {
+              include: {
+                keywords: true,
+                authors: true
+              }
+            }
+          } }
       }
     })
 

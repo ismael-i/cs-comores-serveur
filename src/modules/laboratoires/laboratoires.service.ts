@@ -73,7 +73,8 @@ export class LaboratoiresService {
             keywords: true
           },
           orderBy: { year: "desc" }
-        }
+        },
+         _count: { select: { chercheurs: true, publications: true } }
       }
     })
 

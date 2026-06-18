@@ -9,15 +9,15 @@ interface EmailData {
 
 export async function sendEmail({ to, subject, template, context }: EmailData) {
   // En développement, on log juste les emails
-  if (env.NODE_ENV === "development" || !env.SMTP_HOST) {
-    console.log("\n📧 ─── EMAIL (DEV) ───")
-    console.log(`   To: ${to}`)
-    console.log(`   Subject: ${subject}`)
-    console.log(`   Template: ${template}`)
-    console.log(`   Context:`, JSON.stringify(context, null, 2))
-    console.log("─".repeat(40) + "\n")
-    return
-  }
+  // if (env.NODE_ENV === "development" || !env.SMTP_HOST) {
+  //   console.log("\n📧 ─── EMAIL (DEV) ───")
+  //   console.log(`   To: ${to}`)
+  //   console.log(`   Subject: ${subject}`)
+  //   console.log(`   Template: ${template}`)
+  //   console.log(`   Context:`, JSON.stringify(context, null, 2))
+  //   console.log("─".repeat(40) + "\n")
+  //   return
+  // }
 
   // En production, utiliser nodemailer
   try {
