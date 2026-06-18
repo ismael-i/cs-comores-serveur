@@ -5,7 +5,7 @@ import { AppError } from "../shared/errors/AppError"
 import fs from "fs"
 
 // Créer les dossiers s'ils n'existent pas
-const uploadDirs = ["chercheurs", "laboratoires", "institutions", "fiches"]
+const uploadDirs = ["chercheurs", "laboratoires", "institutions", "fiches" , "articles", 'publications']
 const baseUploadPath = path.join(process.cwd(), "uploads")
 
 // Créer le dossier de base et les sous-dossiers
@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
     let type = req.body?.type || "divers"
     
     // Normaliser le type
-    const validTypes = ["chercheurs", "laboratoires", "institutions", "fiches"]
+    const validTypes = ["chercheurs", "laboratoires", "institutions", "fiches" , "articles", "publications"]
     if (!validTypes.includes(type)) {
       console.warn(`⚠️ Type inconnu: "${type}", utilisation de "divers"`)
       type = "divers"

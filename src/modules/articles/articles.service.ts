@@ -106,6 +106,7 @@ export class ArticlesService {
       const labo = await prisma.laboratoire.findUnique({ where: { id: articleData.laboratoireId } })
       if (!labo) throw new AppError(404, "Laboratoire non trouvé")
     }
+  
 
     return prisma.$transaction(async (tx) => {
       if (Object.keys(articleData).length > 0) {

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express"
 import { PublicationsService } from "./publications.service"
 import { createPublicationSchema, updatePublicationSchema } from "./publications.schema"
+import prisma from "../../config/database"
 
 const publicationsService = new PublicationsService()
 
@@ -45,6 +46,23 @@ export class PublicationsController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
+      const pubId = req.params.id as string
+
+      // Vérification de propriété pour le chercheur
+      if (req.user?.role === "CHERCHEUR") {
+        const publication = await prisma.publication.findUnique({
+          where: { id: pubId },
+          include: { authors: true }
+        })
+        if (!publication) {
+          return res.status(404).json({ error: "Publication non trouvée" })
+        }
+        // Vérifier que le chercheur fait partie des auteurs
+        const isAuthor = publication.authors.some(a => a.chercheurId === req.user!.chercheurId)
+        if (!isAuthor) {
+          return res.status(403).json({ error: "Vous ne pouvez modifier que vos propres publications." })
+        }
+      }
       const data = updatePublicationSchema.parse(req.body)
       const publication = await publicationsService.update(req.params.id as string, data)
       return res.json(publication)
@@ -55,6 +73,22 @@ export class PublicationsController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
+       const pubId = req.params.id as string
+
+      if (req.user?.role === "CHERCHEUR") {
+        const publication = await prisma.publication.findUnique({
+          where: { id: pubId },
+          include: { authors: true }
+        })
+        if (!publication) {
+          return res.status(404).json({ error: "Publication non trouvée" })
+        }
+        const isAuthor = publication.authors.some(a => a.chercheurId === req.user!.chercheurId)
+        if (!isAuthor) {
+          return res.status(403).json({ error: "Vous ne pouvez supprimer que vos propres publications." })
+        }
+      }
+
       await publicationsService.delete(req.params.id as string)
       return res.json({ message: "Publication supprimée" })
     } catch (error) {
@@ -62,12 +96,12 @@ export class PublicationsController {
     }
   }
 
-  async getStats(req: Request, res: Response, next: NextFunction) {
-    try {
-      const stats = await publicationsService.getStats()
-      return res.json(stats)
-    } catch (error) {
-      next(error)
-    }
-  }
+  // async getStats(req: Request, res: Response, next: NextFunction) {
+  //   try {
+  //     const stats = await publicationsService.getStats()
+  //     return res.json(stats)
+  //   } catch (error) {
+  //     next(error)
+  //   }
+  // }
 }

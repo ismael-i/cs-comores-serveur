@@ -41,4 +41,21 @@ router.delete(
   controller.deletePDF
 )
 
+// Upload PDF pour une publication
+router.post(
+  "/publication-pdf",
+  authenticate,
+  authorize("ADMIN", "CHERCHEUR"),
+  upload.single("file"),
+  controller.uploadPublicationPDF
+)
+
+// Supprimer le PDF d'une publication
+router.delete(
+  "/publication-pdf",
+  authenticate,
+  authorize("ADMIN"),
+  controller.deletePublicationPDF
+)
+
 export { router as uploadRoutes }

@@ -49,6 +49,12 @@ export class UploadController {
             where: { id },
             data: { logo: relativePath }
           })
+            break
+        case "articles":
+          await prisma.article.update({
+            where: { id },
+            data: { imageUrl: relativePath }
+          })
           break
         default:
           return res.status(400).json({ error: "Type non supporté" })
@@ -158,6 +164,17 @@ export class UploadController {
           }
           break
         }
+        case "articles": {
+          const art = await prisma.article.findUnique({ where: { id } })
+          currentPath = art?.imageUrl || null
+          if (currentPath) {
+            await prisma.article.update({
+              where: { id },
+              data: { imageUrl: null }
+            })
+          }
+          break
+        }
       }
 
       // Supprimer le fichier physique
@@ -190,6 +207,80 @@ export class UploadController {
         await prisma.chercheur.update({
           where: { id: chercheurId },
           data: { fiche: null }
+        })
+      }
+
+      return res.json({ message: "PDF supprimé" })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+
+  /**
+   * Upload d'un fichier PDF pour une publication
+   */
+  async uploadPublicationPDF(req: Request, res: Response, next: NextFunction) {
+    try {
+      const file = req.file
+      if (!file) {
+        return res.status(400).json({ error: "Aucun fichier" })
+      }
+
+      const publicationId = req.body.publicationId
+      if (!publicationId) {
+        return res.status(400).json({ error: "publicationId requis" })
+      }
+
+      const publication = await prisma.publication.findUnique({
+        where: { id: publicationId }
+      })
+      if (!publication) {
+        return res.status(404).json({ error: "Publication non trouvée" })
+      }
+
+      // Supprimer l'ancien PDF si existe
+      if (publication.pdfUrl) {
+        await uploadService.deleteFile(publication.pdfUrl)
+      }
+
+      // Sauvegarder le nouveau PDF (dossier "publications")
+      const relativePath = await uploadService.saveFile(file, "publications")
+      const fileUrl = uploadService.getFileUrl(relativePath)
+
+      // Mettre à jour la publication
+      await prisma.publication.update({
+        where: { id: publicationId },
+        data: { pdfUrl: relativePath }
+      })
+
+      return res.json({ 
+        url: fileUrl, 
+        path: relativePath 
+      })
+    } catch (error) {
+      next(error)
+    }
+  }
+   /**
+   * Supprimer un PDF de publication
+   */
+  async deletePublicationPDF(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { publicationId } = req.body
+      if (!publicationId) {
+        return res.status(400).json({ error: "publicationId requis" })
+      }
+
+      const publication = await prisma.publication.findUnique({
+        where: { id: publicationId }
+      })
+
+      if (publication?.pdfUrl) {
+        await uploadService.deleteFile(publication.pdfUrl)
+        await prisma.publication.update({
+          where: { id: publicationId },
+          data: { pdfUrl: null }
         })
       }
 

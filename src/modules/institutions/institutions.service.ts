@@ -63,9 +63,16 @@ export class InstitutionsService {
     const institution = await prisma.institution.findUnique({
       where: { acronym },
       include: {
+        chercheurs: {
+          select: { id: true, name: true, specialty: true, photoUrl: true, email: true }
+        },
         laboratoires: {
-          select: { id: true, acronym: true, name: true, categorie: true }
-        }
+          select: {
+            id: true, acronym: true, name: true, categorie: true,
+            researchers: true, statut: true, logo: true, description: true
+          }
+        },
+        _count: { select: { chercheurs: true, laboratoires: true } }
       }
     })
 

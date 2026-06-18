@@ -12,7 +12,7 @@ router.get("/:id", controller.findById)
 
 // Admin seulement
 router.post("/", authenticate, authorize("ADMIN"), controller.create)
-router.put("/:id", authenticate, authorize("ADMIN"), controller.update)
+router.put("/:id", authenticate, authorize("ADMIN", "CHERCHEUR"), controller.update)
 router.delete("/:id", authenticate, authorize("ADMIN"), controller.delete)
 
 export { router as chercheursRoutes }

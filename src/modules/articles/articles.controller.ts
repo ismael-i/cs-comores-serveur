@@ -1,25 +1,27 @@
 import { Request, Response, NextFunction } from "express"
 import { ArticlesService } from "./articles.service"
 import { createArticleSchema, updateArticleSchema } from "./articles.schema"
+import prisma from "../../config/database"
 
 const articlesService = new ArticlesService()
 
 export class ArticlesController {
-  async findAll(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { search, tag, author, page, limit } = req.query
-      const result = await articlesService.findAll({
-        search: search as string,
-        tag: tag as string,
-        author: author as string,
-        page: Number(page) || 1,
-        limit: Number(limit) || 10
-      })
-      return res.json(result)
-    } catch (error) {
-      next(error)
-    }
+ async findAll(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { search, tag, chercheurId, laboratoireId, page, limit } = req.query
+    const result = await articlesService.findAll({
+      search: search as string,
+      tag: tag as string,
+      chercheurId: chercheurId as string,      // ← ajouté
+      laboratoireId: laboratoireId as string,  // ← déjà présent dans le service, on le passe
+      page: Number(page) || 1,
+      limit: Number(limit) || 10
+    })
+    return res.json(result)
+  } catch (error) {
+    next(error)
   }
+}
 
   async findById(req: Request, res: Response, next: NextFunction) {
     try {
@@ -40,8 +42,21 @@ export class ArticlesController {
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
+async update(req: Request, res: Response, next: NextFunction) {
     try {
+      // ─── Vérification de propriété pour le chercheur ───
+
+         const articleId = req.params.id as string  // ← Assertion
+
+      if (req.user?.role === "CHERCHEUR") {
+        const article = await prisma.article.findUnique({
+          where: { id: articleId }
+        })
+        if (!article || article.chercheurId !== req.user.chercheurId) {
+          return res.status(403).json({ error: "Vous ne pouvez modifier que vos propres articles." })
+        }
+      }
+
       const data = updateArticleSchema.parse(req.body)
       const article = await articlesService.update(req.params.id as string, data)
       return res.json(article)
@@ -52,6 +67,18 @@ export class ArticlesController {
 
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
+      // ─── Vérification de propriété pour le chercheur ───
+
+         const articleId = req.params.id as string  // ← Assertion
+      if (req.user?.role === "CHERCHEUR") {
+        const article = await prisma.article.findUnique({
+          where: { id: articleId }
+        })
+        if (!article || article.chercheurId !== req.user.chercheurId) {
+          return res.status(403).json({ error: "Vous ne pouvez supprimer que vos propres articles." })
+        }
+      }
+
       await articlesService.delete(req.params.id as string)
       return res.json({ message: "Article supprimé" })
     } catch (error) {
@@ -59,23 +86,24 @@ export class ArticlesController {
     }
   }
 
-  async getRecent(req: Request, res: Response, next: NextFunction) {
-    try {
-      const articles = await articlesService.getRecent(
-        Number(req.query.limit) || 5
-      )
-      return res.json(articles)
-    } catch (error) {
-      next(error)
-    }
-  }
 
-  async getTags(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tags = await articlesService.getTags()
-      return res.json(tags)
-    } catch (error) {
-      next(error)
-    }
-  }
-}
+//   async getRecent(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const articles = await articlesService.getRecent(
+//         Number(req.query.limit) || 5
+//       )
+//       return res.json(articles)
+//     } catch (error) {
+//       next(error)
+//     }
+//   }
+
+//   async getTags(req: Request, res: Response, next: NextFunction) {
+//     try {
+//       const tags = await articlesService.getTags()
+//       return res.json(tags)
+//     } catch (error) {
+//       next(error)
+//     }
+//   }
+ }
